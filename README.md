@@ -11,7 +11,7 @@ El render actual no escala una imagen de baja resolucion: OpenGL dibuja directam
 - Depth test activado.
 - Fondo gris claro.
 - Ejes 3D X/Y/Z.
-- Cubo wireframe centrado en el origen.
+- Cubo o cilindro wireframe centrado en el origen.
 - Camara orbital mirando al origen.
 
 ## Estructura
@@ -19,7 +19,7 @@ El render actual no escala una imagen de baja resolucion: OpenGL dibuja directam
 - `include/Vec3.hpp`, `src/Vec3.cpp`: vector 3D matematico puro.
 - `include/Mat4.hpp`, `src/Mat4.cpp`: matrices 4x4, perspectiva y `lookAt`.
 - `include/Camera.hpp`, `src/Camera.cpp`: camara orbital simple.
-- `include/Mesh.hpp`, `src/Mesh.cpp`: geometria minima, por ahora un cubo.
+- `include/Mesh.hpp`, `src/Mesh.cpp`: geometria minima, por ahora cubo y cilindro.
 - `include/OpenGLRenderer.hpp`, `src/OpenGLRenderer.cpp`: render 3D con SDL2 + OpenGL.
 - `include/PixelCanvas.hpp`, `src/PixelCanvas.cpp`: canvas 2D por pixeles, conservado como laboratorio.
 - `include/CoordinateSystem.hpp`, `src/CoordinateSystem.cpp`: sistema de coordenadas 2D del laboratorio anterior.
@@ -52,7 +52,16 @@ cmake --build build
 ./build/minicad
 ```
 
-Debe abrirse una ventana 3D con los ejes y un cubo centrado.
+Al iniciar, el programa pide que figura quieres ver:
+
+```text
+Elige figura 3D:
+  1) cubo
+  2) cilindro
+> 
+```
+
+Despues se abre una ventana 3D con los ejes y la figura seleccionada centrada.
 
 ## Controles
 
