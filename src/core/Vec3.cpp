@@ -1,8 +1,8 @@
-#include "Vec3.hpp"
+#include "langcad/core/Vec3.hpp"
 
 #include <cmath>
 
-namespace minicad::core {
+namespace langcad::core {
 
 Vec3::Vec3()
     : x(0.0), y(0.0), z(0.0)
@@ -72,4 +72,4 @@ Vec3 Vec3::normalized() const {
     return *this / length;
 }
 
-} // namespace minicad::core
+} // namespace langcad::core

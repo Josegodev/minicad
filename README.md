@@ -2,7 +2,7 @@
 
 MiniCAD educativo en C++17. La version actual abre un visor 3D minimo usando SDL2 + OpenGL, con matematicas propias para vectores, matrices, camara y geometria basica.
 
-El render actual no escala una imagen de baja resolucion: OpenGL dibuja directamente a la resolucion real de la ventana. `PixelCanvas` sigue existiendo como laboratorio 2D, pero la aplicacion principal usa la nueva capa 3D.
+El render actual no escala una imagen de baja resolucion: OpenGL dibuja directamente a la resolucion real de la ventana.
 
 ## Estado Actual
 
@@ -11,18 +11,16 @@ El render actual no escala una imagen de baja resolucion: OpenGL dibuja directam
 - Depth test activado.
 - Fondo gris claro.
 - Ejes 3D X/Y/Z.
-- Cubo o cilindro wireframe centrado en el origen.
+- Una figura wireframe seleccionable por terminal o argumento.
 - Camara orbital mirando al origen.
 
 ## Estructura
 
-- `include/Vec3.hpp`, `src/Vec3.cpp`: vector 3D matematico puro.
-- `include/Mat4.hpp`, `src/Mat4.cpp`: matrices 4x4, perspectiva y `lookAt`.
-- `include/Camera.hpp`, `src/Camera.cpp`: camara orbital simple.
-- `include/Mesh.hpp`, `src/Mesh.cpp`: geometria minima, por ahora cubo y cilindro.
-- `include/OpenGLRenderer.hpp`, `src/OpenGLRenderer.cpp`: render 3D con SDL2 + OpenGL.
-- `include/PixelCanvas.hpp`, `src/PixelCanvas.cpp`: canvas 2D por pixeles, conservado como laboratorio.
-- `include/CoordinateSystem.hpp`, `src/CoordinateSystem.cpp`: sistema de coordenadas 2D del laboratorio anterior.
+- `include/langcad/core`: tipos comunes como `Vec3`, `Mat4`, `Edge` y `Mesh`.
+- `include/langcad/geometry`: figuras independientes que heredan de `Shape3D` y fabrica de figuras.
+- `include/langcad/scene`: `Scene`, que almacena figuras 3D.
+- `include/langcad/render`: camara, proyeccion y renderer SDL2 + OpenGL.
+- `src/core`, `src/geometry`, `src/scene`, `src/render`: implementaciones de esos modulos.
 
 ## Requisitos
 
@@ -52,16 +50,25 @@ cmake --build build
 ./build/minicad
 ```
 
-Al iniciar, el programa pide que figura quieres ver:
+Al iniciar sin argumentos, el programa muestra un menu por terminal y pide que figura quieres ver:
 
 ```text
-Elige figura 3D:
-  1) cubo
-  2) cilindro
-> 
+1 = Cube
+2 = Cylinder
+3 = Pyramid
+4 = Sphere
 ```
 
-Despues se abre una ventana 3D con los ejes y la figura seleccionada centrada.
+Tambien puedes abrir una figura directamente pasando su numero como argumento:
+
+```bash
+./build/minicad 1  # Cubo
+./build/minicad 2  # Cilindro
+./build/minicad 3  # Piramide
+./build/minicad 4  # Esfera
+```
+
+La escena contiene solamente la figura seleccionada, centrada en el origen y alineada con los ejes 3D.
 
 ## Controles
 
@@ -74,5 +81,7 @@ Despues se abre una ventana 3D con los ejes y la figura seleccionada centrada.
 ## Notas Tecnicas
 
 - La capa matematica no depende de SDL2 ni de OpenGL.
+- `ShapeFactory` centraliza la seleccion de figuras para mantener `main.cpp` simple.
+- El renderer dibuja `Mesh`; no conoce clases concretas como cubo, cilindro, piramide o esfera.
 - El renderer usa OpenGL en modo compatible/simple para mantener el codigo claro.
 - El antialiasing depende de que el driver acepte el framebuffer multisample solicitado por SDL.

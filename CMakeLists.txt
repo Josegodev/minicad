@@ -10,13 +10,17 @@ find_package(OpenGL REQUIRED)
 
 add_executable(minicad
     src/main.cpp
-    src/PixelCanvas.cpp
-    src/Vec3.cpp
-    src/CoordinateSystem.cpp
-    src/Mat4.cpp
-    src/Camera.cpp
-    src/Mesh.cpp
-    src/OpenGLRenderer.cpp
+    src/core/Vec3.cpp
+    src/core/Mat4.cpp
+    src/geometry/Cube.cpp
+    src/geometry/Cylinder.cpp
+    src/geometry/Pyramid.cpp
+    src/geometry/ShapeFactory.cpp
+    src/geometry/Sphere.cpp
+    src/scene/Scene.cpp
+    src/render/Camera.cpp
+    src/render/Projector.cpp
+    src/render/Renderer.cpp
 )
 
 target_include_directories(minicad PRIVATE

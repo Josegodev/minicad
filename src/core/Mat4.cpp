@@ -1,8 +1,8 @@
-#include "Mat4.hpp"
+#include "langcad/core/Mat4.hpp"
 
 #include <cmath>
 
-namespace minicad::core {
+namespace langcad::core {
 
 namespace {
 
@@ -75,4 +75,4 @@ Mat4 Mat4::lookAt(const Vec3& eye, const Vec3& target, const Vec3& up) {
     return matrix;
 }
 
-} // namespace minicad::core
+} // namespace langcad::core

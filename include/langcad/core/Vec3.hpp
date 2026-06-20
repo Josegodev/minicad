@@ -1,6 +1,6 @@
 #pragma once
 
-namespace minicad::core {
+namespace langcad::core {
 
 struct Vec3 {
     double x;
@@ -22,4 +22,4 @@ struct Vec3 {
     Vec3 normalized() const;
 };
 
-} // namespace minicad::core
+} // namespace langcad::core

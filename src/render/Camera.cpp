@@ -1,9 +1,9 @@
-#include "Camera.hpp"
+#include "langcad/render/Camera.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-namespace minicad::graphics {
+namespace langcad::render {
 
 namespace {
 
@@ -26,22 +26,22 @@ void Camera::orbit(double delta_yaw, double delta_pitch) {
     pitch_ = std::clamp(pitch_ + delta_pitch, -1.35, 1.35);
 }
 
-minicad::core::Mat4 Camera::viewMatrix() const {
-    return minicad::core::Mat4::lookAt(position(), target_, up_);
+core::Mat4 Camera::viewMatrix() const {
+    return core::Mat4::lookAt(position(), target_, up_);
 }
 
-minicad::core::Mat4 Camera::projectionMatrix(double aspect) const {
-    return minicad::core::Mat4::perspective(fov_degrees_, aspect, 0.1, 100.0);
+core::Mat4 Camera::projectionMatrix(double aspect) const {
+    return core::Mat4::perspective(fov_degrees_, aspect, 0.1, 100.0);
 }
 
-minicad::core::Vec3 Camera::position() const {
+core::Vec3 Camera::position() const {
     double cos_pitch = std::cos(pitch_);
 
-    return minicad::core::Vec3(
+    return core::Vec3(
         target_.x + distance_ * cos_pitch * std::sin(yaw_),
         target_.y + distance_ * std::sin(pitch_),
         target_.z + distance_ * cos_pitch * std::cos(yaw_)
     );
 }
 
-} // namespace minicad::graphics
+} // namespace langcad::render

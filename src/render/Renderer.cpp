@@ -1,12 +1,14 @@
-#include "OpenGLRenderer.hpp"
+#include "langcad/render/Renderer.hpp"
+
+#include "langcad/render/Projector.hpp"
 
 #include <SDL_opengl.h>
 
 #include <stdexcept>
 
-namespace minicad::graphics {
+namespace langcad::render {
 
-OpenGLRenderer::OpenGLRenderer(int width, int height, const std::string& title)
+Renderer::Renderer(int width, int height, const std::string& title)
     : width_(width),
       height_(height),
       window_(nullptr),
@@ -50,7 +52,7 @@ OpenGLRenderer::OpenGLRenderer(int width, int height, const std::string& title)
     glLineWidth(2.0f);
 }
 
-OpenGLRenderer::~OpenGLRenderer() {
+Renderer::~Renderer() {
     if (context_) {
         SDL_GL_DeleteContext(context_);
     }
@@ -62,7 +64,7 @@ OpenGLRenderer::~OpenGLRenderer() {
     SDL_Quit();
 }
 
-bool OpenGLRenderer::handleEvents(Camera& camera) {
+bool Renderer::handleEvents(Camera& camera) {
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
@@ -104,32 +106,60 @@ bool OpenGLRenderer::handleEvents(Camera& camera) {
     return true;
 }
 
-void OpenGLRenderer::render(const Camera& camera, const minicad::geometry::Mesh& mesh) {
+void Renderer::render(const Camera& camera, const scene::Scene& scene) {
     if (height_ <= 0) {
         height_ = 1;
     }
-
-    double aspect = static_cast<double>(width_) / static_cast<double>(height_);
-    minicad::core::Mat4 projection = camera.projectionMatrix(aspect);
-    minicad::core::Mat4 view = camera.viewMatrix();
 
     glViewport(0, 0, width_, height_);
     glClearColor(0.94f, 0.94f, 0.92f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(projection.data());
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(view.data());
-
+    loadCamera(camera);
     drawAxes();
-    drawMeshWireframe(mesh);
+
+    for (const auto& shape : scene.shapes()) {
+        drawMesh(shape->toMesh(), camera);
+    }
 
     SDL_GL_SwapWindow(window_);
 }
 
-void OpenGLRenderer::drawAxes() const {
+void Renderer::drawMesh(const core::Mesh& mesh, const Camera& camera) const {
+    loadCamera(camera);
+
+    glColor3f(0.05f, 0.05f, 0.05f);
+    glBegin(GL_LINES);
+
+    for (const auto& edge : mesh.edges) {
+        if (!isValidEdge(mesh, edge)) {
+            continue;
+        }
+
+        const auto& a = mesh.vertices[static_cast<std::size_t>(edge.a)];
+        const auto& b = mesh.vertices[static_cast<std::size_t>(edge.b)];
+
+        glVertex3d(a.x, a.y, a.z);
+        glVertex3d(b.x, b.y, b.z);
+    }
+
+    glEnd();
+}
+
+void Renderer::loadCamera(const Camera& camera) const {
+    double aspect = height_ > 0
+        ? static_cast<double>(width_) / static_cast<double>(height_)
+        : 1.0;
+    Projector projector(camera, aspect);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadMatrixf(projector.projectionMatrix().data());
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf(projector.viewMatrix().data());
+}
+
+void Renderer::drawAxes() const {
     glBegin(GL_LINES);
 
     glColor3f(0.9f, 0.05f, 0.05f);
@@ -147,21 +177,11 @@ void OpenGLRenderer::drawAxes() const {
     glEnd();
 }
 
-void OpenGLRenderer::drawMeshWireframe(const minicad::geometry::Mesh& mesh) const {
-    const auto& vertices = mesh.vertices();
-
-    glColor3f(0.05f, 0.05f, 0.05f);
-    glBegin(GL_LINES);
-
-    for (const auto& edge : mesh.edges()) {
-        const auto& a = vertices[edge[0]];
-        const auto& b = vertices[edge[1]];
-
-        glVertex3d(a.x, a.y, a.z);
-        glVertex3d(b.x, b.y, b.z);
-    }
-
-    glEnd();
+bool Renderer::isValidEdge(const core::Mesh& mesh, const core::Edge& edge) const {
+    return edge.a >= 0
+        && edge.b >= 0
+        && static_cast<std::size_t>(edge.a) < mesh.vertices.size()
+        && static_cast<std::size_t>(edge.b) < mesh.vertices.size();
 }
 
-} // namespace minicad::graphics
+} // namespace langcad::render

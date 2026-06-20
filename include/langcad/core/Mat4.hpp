@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Vec3.hpp"
+#include "langcad/core/Vec3.hpp"
 
 #include <array>
 
-namespace minicad::core {
+namespace langcad::core {
 
 class Mat4 {
 public:
@@ -21,4 +21,4 @@ private:
     std::array<float, 16> values_;
 };
 
-} // namespace minicad::core
+} // namespace langcad::core
