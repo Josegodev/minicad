@@ -1,6 +1,5 @@
+#include "langcad/editor/EditorApp.hpp"
 #include "langcad/geometry/ShapeFactory.hpp"
-#include "langcad/render/Camera.hpp"
-#include "langcad/render/Renderer.hpp"
 #include "langcad/scene/Scene.hpp"
 
 #include <exception>
@@ -16,6 +15,9 @@ void printMenu() {
               << "2 = Cylinder\n"
               << "3 = Pyramid\n"
               << "4 = Sphere\n"
+              << "5 = OCC Box\n"
+              << "6 = OCC Cylinder\n"
+              << "7 = OCC Sphere\n"
               << "Selection: ";
 }
 
@@ -38,18 +40,11 @@ int main(int argc, char* argv[]) {
         int selection = readSelection(argc, argv);
         auto shape = langcad::geometry::createShapeFromSelection(selection);
 
-        langcad::render::Renderer renderer(1024, 768, "MiniCAD - 3D Viewer");
-        langcad::render::Camera camera;
         langcad::scene::Scene scene;
 
         scene.add(std::move(shape));
-
-        bool running = true;
-
-        while (running) {
-            running = renderer.handleEvents(camera);
-            renderer.render(camera, scene);
-        }
+        langcad::editor::EditorApp app(std::move(scene));
+        return app.run();
     } catch (const std::exception& error) {
         std::cerr << "Error: " << error.what() << '\n';
         return 1;

@@ -28,7 +28,9 @@ core::Mesh Sphere::toMesh() const {
 
     // The sphere is represented as deterministic latitude and longitude wire rings.
     mesh.vertices.reserve(static_cast<std::size_t>(rings_ + 1) * static_cast<std::size_t>(segments_));
+    mesh.normals.reserve(static_cast<std::size_t>(rings_ + 1) * static_cast<std::size_t>(segments_));
     mesh.edges.reserve(static_cast<std::size_t>(rings_ + 1) * static_cast<std::size_t>(segments_) * 2);
+    mesh.triangles.reserve(static_cast<std::size_t>(rings_) * static_cast<std::size_t>(segments_) * 2);
 
     for (int ring = 0; ring <= rings_; ++ring) {
         double v = static_cast<double>(ring) / static_cast<double>(rings_);
@@ -40,11 +42,14 @@ core::Mesh Sphere::toMesh() const {
             double u = static_cast<double>(segment) / static_cast<double>(segments_);
             double angle = 2.0 * pi * u;
 
-            mesh.vertices.push_back(center_ + core::Vec3(
+            core::Vec3 normal(
                 ring_radius * std::cos(angle),
                 y,
                 ring_radius * std::sin(angle)
-            ));
+            );
+
+            mesh.vertices.push_back(center_ + normal);
+            mesh.normals.push_back(normal.normalized());
         }
     }
 
@@ -58,6 +63,14 @@ core::Mesh Sphere::toMesh() const {
             if (ring < rings_) {
                 int next_ring = (ring + 1) * segments_ + segment;
                 mesh.edges.push_back({current, next_ring});
+
+                int diagonal = (ring + 1) * segments_ + ((segment + 1) % segments_);
+                if (ring != 0) {
+                    mesh.triangles.push_back({current, next_ring, next_segment});
+                }
+                if (ring != rings_ - 1) {
+                    mesh.triangles.push_back({next_segment, next_ring, diagonal});
+                }
             }
         }
     }

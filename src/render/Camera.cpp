@@ -26,6 +26,10 @@ void Camera::orbit(double delta_yaw, double delta_pitch) {
     pitch_ = std::clamp(pitch_ + delta_pitch, -1.35, 1.35);
 }
 
+void Camera::zoom(double delta_distance) {
+    distance_ = std::clamp(distance_ + delta_distance, 1.0, 40.0);
+}
+
 core::Mat4 Camera::viewMatrix() const {
     return core::Mat4::lookAt(position(), target_, up_);
 }

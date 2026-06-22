@@ -23,6 +23,28 @@ const float* Mat4::data() const {
     return values_.data();
 }
 
+std::array<float, 16> Mat4::values() const {
+    return values_;
+}
+
+Mat4 Mat4::operator*(const Mat4& other) const {
+    Mat4 result;
+
+    for (int row = 0; row < 4; ++row) {
+        for (int column = 0; column < 4; ++column) {
+            float value = 0.0f;
+
+            for (int k = 0; k < 4; ++k) {
+                value += values_[index(row, k)] * other.values_[index(k, column)];
+            }
+
+            result.values_[index(row, column)] = value;
+        }
+    }
+
+    return result;
+}
+
 Mat4 Mat4::identity() {
     Mat4 matrix;
 
@@ -31,6 +53,12 @@ Mat4 Mat4::identity() {
     matrix.values_[index(2, 2)] = 1.0f;
     matrix.values_[index(3, 3)] = 1.0f;
 
+    return matrix;
+}
+
+Mat4 Mat4::fromColumnMajor(const std::array<float, 16>& values) {
+    Mat4 matrix;
+    matrix.values_ = values;
     return matrix;
 }
 

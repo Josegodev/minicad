@@ -10,7 +10,9 @@ public:
     Camera();
 
     void orbit(double delta_yaw, double delta_pitch);
+    void zoom(double delta_distance);
 
+    core::Vec3 position() const;
     core::Mat4 viewMatrix() const;
     core::Mat4 projectionMatrix(double aspect) const;
 
@@ -22,7 +24,6 @@ private:
     double pitch_;
     double fov_degrees_;
 
-    core::Vec3 position() const;
 };
 
 } // namespace langcad::render

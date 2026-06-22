@@ -9,3 +9,4 @@ Makefile
 *.dylib
 *.dll
 *.exe
+imgui.ini
