@@ -47,7 +47,7 @@ std::unique_ptr<Shape3D> createShapeFromDefinition(const ShapeDefinition& defini
         return std::make_unique<Cylinder>(
             definition.dimensions.at("radius"),
             definition.dimensions.at("height"),
-            definition.render.segments,
+            definition.tessellation.segments,
             origin
         );
     }
@@ -63,8 +63,8 @@ std::unique_ptr<Shape3D> createShapeFromDefinition(const ShapeDefinition& defini
     if (definition.shape_type == "sphere") {
         return std::make_unique<Sphere>(
             definition.dimensions.at("radius"),
-            definition.render.rings,
-            definition.render.segments,
+            definition.tessellation.rings,
+            definition.tessellation.segments,
             origin
         );
     }

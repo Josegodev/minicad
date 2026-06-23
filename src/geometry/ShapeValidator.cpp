@@ -59,35 +59,35 @@ ShapeValidationResult validateShapeDefinition(const ShapeDefinition& definition)
         }
     }
 
-    if (!spec->supports_segments && definition.render.segments != 0) {
+    if (!spec->supports_segments && definition.tessellation.segments != 0) {
         result.errors.push_back("render.segments is not supported for shape_type '" + spec->shape_type + "'");
     }
 
-    if (!spec->supports_rings && definition.render.rings != 0) {
+    if (!spec->supports_rings && definition.tessellation.rings != 0) {
         result.errors.push_back("render.rings is not supported for shape_type '" + spec->shape_type + "'");
     }
 
     if (spec->supports_segments) {
-        int segments = definition.render.segments == 0
+        int segments = definition.tessellation.segments == 0
             ? spec->default_segments
-            : definition.render.segments;
+            : definition.tessellation.segments;
 
         if (segments < min_segments || segments > max_segments) {
             result.errors.push_back("render.segments must be between 8 and 256");
         } else {
-            result.normalized_definition.render.segments = segments;
+            result.normalized_definition.tessellation.segments = segments;
         }
     }
 
     if (spec->supports_rings) {
-        int rings = definition.render.rings == 0
+        int rings = definition.tessellation.rings == 0
             ? spec->default_rings
-            : definition.render.rings;
+            : definition.tessellation.rings;
 
         if (rings < min_rings || rings > max_rings) {
             result.errors.push_back("render.rings must be between 4 and 128");
         } else {
-            result.normalized_definition.render.rings = rings;
+            result.normalized_definition.tessellation.rings = rings;
         }
     }
 

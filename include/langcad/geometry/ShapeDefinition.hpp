@@ -6,7 +6,7 @@
 
 namespace langcad::geometry {
 
-struct RenderOptions {
+struct TessellationOptions {
     int segments = 0;
     int rings = 0;
 };
@@ -15,8 +15,13 @@ struct ShapeDefinition {
     std::string shape_type;
     std::map<std::string, double> dimensions;
     std::string units = "unitless";
-    RenderOptions render;
+    TessellationOptions tessellation;
     bool centered = true;
+};
+
+struct CadOperationProposal {
+    std::string operation;
+    ShapeDefinition shape_definition;
 };
 
 struct ShapeValidationResult {

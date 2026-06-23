@@ -110,7 +110,7 @@ geometry::ShapeDefinition invalidDefinitionForPrompt(const std::string& prompt) 
         definition.shape_type = containsAny(text, {"esfera", "sphere"}) ? "sphere" : "cylinder";
         definition.dimensions["radius"] = 1.0;
         definition.units = "unitless";
-        definition.render.segments = largestIntegerIn(text);
+        definition.tessellation.segments = largestIntegerIn(text);
         definition.centered = true;
 
         if (definition.shape_type == "cylinder") {

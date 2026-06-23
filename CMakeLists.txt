@@ -90,26 +90,33 @@ target_include_directories(imguizmo_lib PUBLIC
 
 target_link_libraries(imguizmo_lib PUBLIC imgui_lib)
 
-add_library(langcad_core
+add_library(langcad_kernel
     src/core/Vec3.cpp
     src/core/Mat4.cpp
+    src/geometry/Cube.cpp
+    src/geometry/Cylinder.cpp
+    src/geometry/Pyramid.cpp
+    src/geometry/ShapeCatalog.cpp
+    src/geometry/ShapeValidator.cpp
+    src/geometry/Sphere.cpp
+    src/scene/Scene.cpp
+)
+
+target_include_directories(langcad_kernel PUBLIC
+    include
+)
+
+add_library(langcad_core
     src/api/ApiServer.cpp
     src/api/ShapeJson.cpp
     src/api/StructuredLogger.cpp
     src/api/Trace.cpp
-    src/geometry/Cube.cpp
-    src/geometry/Cylinder.cpp
     src/geometry/OcctBox.cpp
     src/geometry/OcctCylinder.cpp
     src/geometry/OcctMeshConverter.cpp
     src/geometry/OcctSphere.cpp
-    src/geometry/Pyramid.cpp
-    src/geometry/ShapeCatalog.cpp
     src/geometry/ShapeFactory.cpp
-    src/geometry/ShapeValidator.cpp
-    src/geometry/Sphere.cpp
     src/llm/OllamaClient.cpp
-    src/scene/Scene.cpp
     src/render/Camera.cpp
     src/render/GpuMesh.cpp
     src/render/OpenGLApi.cpp
@@ -137,9 +144,9 @@ target_include_directories(langcad_core PUBLIC
 )
 
 if(TARGET SDL2::SDL2)
-    target_link_libraries(langcad_core PUBLIC SDL2::SDL2 OpenGL::GL nlohmann_json::nlohmann_json httplib::httplib imgui_lib imguizmo_lib ${LANGCAD_OCC_LIBRARIES})
+    target_link_libraries(langcad_core PUBLIC langcad_kernel SDL2::SDL2 OpenGL::GL nlohmann_json::nlohmann_json httplib::httplib imgui_lib imguizmo_lib ${LANGCAD_OCC_LIBRARIES})
 else()
-    target_link_libraries(langcad_core PUBLIC ${SDL2_LIBRARIES} OpenGL::GL nlohmann_json::nlohmann_json httplib::httplib imgui_lib imguizmo_lib ${LANGCAD_OCC_LIBRARIES})
+    target_link_libraries(langcad_core PUBLIC langcad_kernel ${SDL2_LIBRARIES} OpenGL::GL nlohmann_json::nlohmann_json httplib::httplib imgui_lib imguizmo_lib ${LANGCAD_OCC_LIBRARIES})
 endif()
 
 add_executable(minicad

@@ -138,7 +138,7 @@ ParsedShapeDefinition parseShapeDefinitionJson(const nlohmann::json& input) {
                 if (!render.at("segments").is_number_integer()) {
                     parsed.errors.push_back("render.segments must be an integer");
                 } else {
-                    parsed.definition.render.segments = render.at("segments").get<int>();
+                    parsed.definition.tessellation.segments = render.at("segments").get<int>();
                 }
             }
 
@@ -146,7 +146,7 @@ ParsedShapeDefinition parseShapeDefinitionJson(const nlohmann::json& input) {
                 if (!render.at("rings").is_number_integer()) {
                     parsed.errors.push_back("render.rings must be an integer");
                 } else {
-                    parsed.definition.render.rings = render.at("rings").get<int>();
+                    parsed.definition.tessellation.rings = render.at("rings").get<int>();
                 }
             }
         }
@@ -159,12 +159,12 @@ ParsedShapeDefinition parseShapeDefinitionJson(const nlohmann::json& input) {
 nlohmann::json shapeDefinitionToJson(const geometry::ShapeDefinition& definition) {
     nlohmann::json render = nlohmann::json::object();
 
-    if (definition.render.segments != 0) {
-        render["segments"] = definition.render.segments;
+    if (definition.tessellation.segments != 0) {
+        render["segments"] = definition.tessellation.segments;
     }
 
-    if (definition.render.rings != 0) {
-        render["rings"] = definition.render.rings;
+    if (definition.tessellation.rings != 0) {
+        render["rings"] = definition.tessellation.rings;
     }
 
     return {
