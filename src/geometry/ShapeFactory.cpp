@@ -2,6 +2,7 @@
 
 #include "langcad/geometry/Cube.hpp"
 #include "langcad/geometry/Cylinder.hpp"
+#include "langcad/geometry/FacetedShape.hpp"
 #include "langcad/geometry/OcctBox.hpp"
 #include "langcad/geometry/OcctCylinder.hpp"
 #include "langcad/geometry/OcctSphere.hpp"
@@ -66,6 +67,14 @@ std::unique_ptr<Shape3D> createShapeFromDefinition(const ShapeDefinition& defini
             definition.tessellation.rings,
             definition.tessellation.segments,
             origin
+        );
+    }
+
+    if (definition.shape_type == "faceted_shape") {
+        return std::make_unique<FacetedShape>(
+            definition.vertices,
+            definition.edges,
+            definition.faces
         );
     }
 

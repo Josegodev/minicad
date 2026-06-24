@@ -95,9 +95,11 @@ add_library(langcad_kernel
     src/core/Mat4.cpp
     src/geometry/Cube.cpp
     src/geometry/Cylinder.cpp
+    src/geometry/FacetedShape.cpp
     src/geometry/Pyramid.cpp
     src/geometry/ShapeCatalog.cpp
     src/geometry/ShapeValidator.cpp
+    src/geometry/SkeletonResolver.cpp
     src/geometry/Sphere.cpp
     src/scene/Scene.cpp
 )

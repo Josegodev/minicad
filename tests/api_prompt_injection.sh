@@ -35,7 +35,7 @@ printf '# Start the API first with: ./build/langcad_api\n'
 post_prompt \
     "/api/v1/llm/shape-definition" \
     "valid cube prompt" \
-    "validation.valid=true, shape_type=cube, no render is started." \
+    "validation.valid=true, shape_type=faceted_shape with derived edges, no render is started." \
     "crea un cubo de tamano 2"
 
 post_prompt \

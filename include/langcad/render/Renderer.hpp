@@ -41,11 +41,12 @@ private:
     std::unique_ptr<ShaderProgram> mesh_shader_;
     std::unique_ptr<ShaderProgram> line_shader_;
     std::unique_ptr<GpuLines> axes_;
-    std::unordered_map<const geometry::Shape3D*, std::unique_ptr<GpuMesh>> mesh_cache_;
+    struct GpuShape;
+    std::unordered_map<const geometry::Shape3D*, std::unique_ptr<GpuShape>> shape_cache_;
 
     void initializeModernPipeline();
     void drawAxes(const Camera& camera) const;
-    GpuMesh& gpuMeshFor(const geometry::Shape3D& shape);
+    GpuShape& gpuShapeFor(const geometry::Shape3D& shape);
 };
 
 } // namespace langcad::render

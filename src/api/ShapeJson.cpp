@@ -82,6 +82,146 @@ bool readString(
     return true;
 }
 
+bool readInteger(
+    const nlohmann::json& input,
+    const std::string& key,
+    int& output,
+    const std::string& scope,
+    std::vector<std::string>& errors
+) {
+    if (!input.contains(key)) {
+        errors.push_back("Missing required field '" + scope + key + "'");
+        return false;
+    }
+
+    if (!input.at(key).is_number_integer()) {
+        errors.push_back("Field '" + scope + key + "' must be an integer");
+        return false;
+    }
+
+    output = input.at(key).get<int>();
+    return true;
+}
+
+bool readNumber(
+    const nlohmann::json& input,
+    const std::string& key,
+    double& output,
+    const std::string& scope,
+    std::vector<std::string>& errors
+) {
+    if (!input.contains(key)) {
+        errors.push_back("Missing required field '" + scope + key + "'");
+        return false;
+    }
+
+    if (!input.at(key).is_number()) {
+        errors.push_back("Field '" + scope + key + "' must be numeric");
+        return false;
+    }
+
+    output = input.at(key).get<double>();
+    return true;
+}
+
+void parseVertices(const nlohmann::json& input, geometry::ShapeDefinition& definition, std::vector<std::string>& errors) {
+    if (!input.contains("vertices")) {
+        return;
+    }
+
+    if (!input.at("vertices").is_array()) {
+        errors.push_back("Field 'vertices' must be an array");
+        return;
+    }
+
+    for (std::size_t index = 0; index < input.at("vertices").size(); ++index) {
+        const auto& vertex = input.at("vertices").at(index);
+        std::string scope = "vertices[" + std::to_string(index) + "].";
+
+        if (!vertex.is_object()) {
+            errors.push_back("vertices[" + std::to_string(index) + "] must be an object");
+            continue;
+        }
+
+        rejectUnknownKeys(vertex, {"x", "y", "z"}, scope, errors);
+
+        double x = 0.0;
+        double y = 0.0;
+        double z = 0.0;
+        bool ok = readNumber(vertex, "x", x, scope, errors);
+        ok = readNumber(vertex, "y", y, scope, errors) && ok;
+        ok = readNumber(vertex, "z", z, scope, errors) && ok;
+
+        if (ok) {
+            definition.vertices.push_back(core::Vec3(x, y, z));
+        }
+    }
+}
+
+void parseEdges(const nlohmann::json& input, geometry::ShapeDefinition& definition, std::vector<std::string>& errors) {
+    if (!input.contains("edges")) {
+        return;
+    }
+
+    if (!input.at("edges").is_array()) {
+        errors.push_back("Field 'edges' must be an array");
+        return;
+    }
+
+    for (std::size_t index = 0; index < input.at("edges").size(); ++index) {
+        const auto& edge = input.at("edges").at(index);
+        std::string scope = "edges[" + std::to_string(index) + "].";
+
+        if (!edge.is_object()) {
+            errors.push_back("edges[" + std::to_string(index) + "] must be an object");
+            continue;
+        }
+
+        rejectUnknownKeys(edge, {"a", "b"}, scope, errors);
+
+        int a = 0;
+        int b = 0;
+        bool ok = readInteger(edge, "a", a, scope, errors);
+        ok = readInteger(edge, "b", b, scope, errors) && ok;
+
+        if (ok) {
+            definition.edges.push_back({a, b});
+        }
+    }
+}
+
+void parseFaces(const nlohmann::json& input, geometry::ShapeDefinition& definition, std::vector<std::string>& errors) {
+    if (!input.contains("faces")) {
+        return;
+    }
+
+    if (!input.at("faces").is_array()) {
+        errors.push_back("Field 'faces' must be an array");
+        return;
+    }
+
+    for (std::size_t face_index = 0; face_index < input.at("faces").size(); ++face_index) {
+        const auto& face_json = input.at("faces").at(face_index);
+
+        if (!face_json.is_array()) {
+            errors.push_back("faces[" + std::to_string(face_index) + "] must be an array of vertex indices");
+            continue;
+        }
+
+        geometry::FaceDefinition face;
+        for (std::size_t vertex_index = 0; vertex_index < face_json.size(); ++vertex_index) {
+            if (!face_json.at(vertex_index).is_number_integer()) {
+                errors.push_back("faces[" + std::to_string(face_index) + "][" + std::to_string(vertex_index) + "] must be an integer");
+                continue;
+            }
+
+            face.vertices.push_back(face_json.at(vertex_index).get<int>());
+        }
+
+        definition.faces.push_back(face);
+    }
+}
+
 } // namespace
 
 ParsedShapeDefinition parseShapeDefinitionJson(const nlohmann::json& input) {
@@ -96,7 +236,7 @@ ParsedShapeDefinition parseShapeDefinitionJson(const nlohmann::json& input) {
 
     rejectUnknownKeys(
         input,
-        {"shape_type", "dimensions", "units", "render", "centered"},
+        {"shape_type", "dimensions", "vertices", "edges", "faces", "units", "render", "centered"},
         "",
         parsed.errors
     );
@@ -152,28 +292,61 @@ ParsedShapeDefinition parseShapeDefinitionJson(const nlohmann::json& input) {
         }
     }
 
+    parseVertices(input, parsed.definition, parsed.errors);
+    parseEdges(input, parsed.definition, parsed.errors);
+    parseFaces(input, parsed.definition, parsed.errors);
+
+    if (!parsed.definition.shape_type.empty()
+        && parsed.definition.shape_type != "faceted_shape"
+        && (!parsed.definition.vertices.empty() || !parsed.definition.edges.empty() || !parsed.definition.faces.empty())) {
+        parsed.errors.push_back("vertices, edges and faces are only supported for shape_type 'faceted_shape'");
+    }
+
     parsed.definition.centered = true;
     return parsed;
 }
 
 nlohmann::json shapeDefinitionToJson(const geometry::ShapeDefinition& definition) {
     nlohmann::json render = nlohmann::json::object();
-
-    if (definition.tessellation.segments != 0) {
-        render["segments"] = definition.tessellation.segments;
-    }
-
-    if (definition.tessellation.rings != 0) {
-        render["rings"] = definition.tessellation.rings;
-    }
-
-    return {
+    nlohmann::json output = {
         {"shape_type", definition.shape_type},
         {"dimensions", definition.dimensions},
         {"units", definition.units},
         {"render", render},
         {"centered", definition.centered}
     };
+
+    if (definition.tessellation.segments != 0) {
+        output["render"]["segments"] = definition.tessellation.segments;
+    }
+
+    if (definition.tessellation.rings != 0) {
+        output["render"]["rings"] = definition.tessellation.rings;
+    }
+
+    if (definition.shape_type == "faceted_shape" || !definition.vertices.empty() || !definition.edges.empty() || !definition.faces.empty()) {
+        nlohmann::json vertices = nlohmann::json::array();
+        nlohmann::json edges = nlohmann::json::array();
+        nlohmann::json faces = nlohmann::json::array();
+
+        for (const auto& vertex : definition.vertices) {
+            vertices.push_back({{"x", vertex.x}, {"y", vertex.y}, {"z", vertex.z}});
+        }
+
+        for (const auto& edge : definition.edges) {
+            edges.push_back({{"a", edge.a}, {"b", edge.b}});
+        }
+
+        for (const auto& face : definition.faces) {
+            faces.push_back(face.vertices);
+        }
+
+        output["vertices"] = vertices;
+        output["edges"] = edges;
+        output["faces"] = faces;
+    }
+
+    return output;
 }
 
 nlohmann::json validationToJson(const geometry::ShapeValidationResult& validation) {
@@ -243,11 +416,28 @@ nlohmann::json supportedShapesToJson() {
             };
         }
 
-        shapes.push_back({
+        nlohmann::json shape = {
             {"shape_type", spec.shape_type},
             {"dimensions", dimensions},
             {"render", render}
-        });
+        };
+
+        if (spec.shape_type == "faceted_shape") {
+            shape["vertices"] = {
+                {"required", true},
+                {"item", {{"x", "number"}, {"y", "number"}, {"z", "number"}}}
+            };
+            shape["edges"] = {
+                {"required", false},
+                {"item", {{"a", "integer vertex index"}, {"b", "integer vertex index"}}}
+            };
+            shape["faces"] = {
+                {"required", false},
+                {"item", "array of at least three integer vertex indices"}
+            };
+        }
+
+        shapes.push_back(shape);
     }
 
     return shapes;
@@ -257,11 +447,11 @@ nlohmann::json shapeDefinitionSchemaJson() {
     return {
         {"type", "object"},
         {"additionalProperties", false},
-        {"required", {"shape_type", "dimensions", "units", "render", "centered"}},
+        {"required", {"shape_type", "dimensions", "vertices", "faces", "units", "render", "centered"}},
         {"properties", {
             {"shape_type", {
                 {"type", "string"},
-                {"enum", {"cube", "cylinder", "pyramid", "sphere"}}
+                {"enum", {"faceted_shape"}}
             }},
             {"dimensions", {
                 {"type", "object"},
@@ -271,6 +461,28 @@ nlohmann::json shapeDefinitionSchemaJson() {
                     {"radius", {{"type", "number"}, {"description", "Radius/radio of a cylinder or sphere."}}},
                     {"height", {{"type", "number"}, {"description", "Height/altura of a cylinder or pyramid."}}},
                     {"base_size", {{"type", "number"}, {"description", "Square base size/tamano de base for a pyramid."}}}
+                }}
+            }},
+            {"vertices", {
+                {"type", "array"},
+                {"items", {
+                    {"type", "object"},
+                    {"additionalProperties", false},
+                    {"required", {"x", "y", "z"}},
+                    {"properties", {
+                        {"x", {{"type", "number"}}},
+                        {"y", {{"type", "number"}}},
+                        {"z", {{"type", "number"}}}
+                    }}
+                }}
+            }},
+            {"faces", {
+                {"type", "array"},
+                {"minItems", 1},
+                {"items", {
+                    {"type", "array"},
+                    {"minItems", 3},
+                    {"items", {{"type", "integer"}}}
                 }}
             }},
             {"units", {{"type", "string"}}},

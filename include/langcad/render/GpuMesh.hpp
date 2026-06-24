@@ -48,4 +48,22 @@ private:
     GLsizei index_count_;
 };
 
+class GpuPoints {
+public:
+    explicit GpuPoints(const std::vector<core::Vec3>& vertices);
+    ~GpuPoints();
+
+    GpuPoints(const GpuPoints&) = delete;
+    GpuPoints& operator=(const GpuPoints&) = delete;
+
+    GpuPoints(GpuPoints&& other) noexcept;
+    GpuPoints& operator=(GpuPoints&& other) noexcept;
+
+    void draw(const ShaderProgram& shader) const;
+
+private:
+    GLuint vertex_buffer_;
+    GLsizei vertex_count_;
+};
+
 } // namespace langcad::render

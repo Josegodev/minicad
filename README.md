@@ -16,6 +16,8 @@ El render actual no escala una imagen de baja resolucion: OpenGL dibuja directam
 - Una figura wireframe seleccionable por terminal o argumento.
 - Camara orbital mirando al origen.
 - Separacion inicial de build entre `langcad_kernel` y la capa de integracion `langcad_core`.
+- Definicion JSON manual de `faceted_shape` con vertices, aristas y caras para la API.
+- Ollama puede proponer `faceted_shape` con vertices y caras minimas; el runtime deriva aristas y normaliza la topologia.
 
 ## Estructura
 
@@ -113,9 +115,17 @@ curl -X POST http://127.0.0.1:8080/api/v1/shapes/mesh \
   -H 'Content-Type: application/json' \
   -d '{"shape_type":"cube","dimensions":{"size":2},"units":"unitless","render":{},"centered":true}'
 
+curl -X POST http://127.0.0.1:8080/api/v1/shapes/mesh \
+  -H 'Content-Type: application/json' \
+  -d '{"shape_type":"faceted_shape","dimensions":{},"vertices":[{"x":0,"y":0,"z":0},{"x":1,"y":0,"z":0},{"x":0,"y":1,"z":0}],"edges":[{"a":0,"b":1},{"a":1,"b":2},{"a":2,"b":0}],"faces":[[0,1,2]],"units":"unitless","render":{},"centered":true}'
+
 curl -X POST http://127.0.0.1:8080/api/v1/llm/shape-definition \
   -H 'Content-Type: application/json' \
   -d '{"prompt":"un cubo de tamano 2"}'
+
+curl -X POST http://127.0.0.1:8080/api/v1/llm/shape-definition \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt":"cara triangular con vertices (0,0,0), (1,0,0), (0,1,0)"}'
 ```
 
 `/api/v1/shapes/render` y `/api/v1/llm/render` abren una ventana persistente del editor CAD con ImGui + ImGuizmo solo cuando reciben una peticion. Cada nuevo render de API reemplaza el anterior; para cerrar la ventana activa usa el cierre de ventana o `ESC`.
@@ -176,6 +186,7 @@ API_URL=http://127.0.0.1:8080 tests/api_prompt_injection.sh
 - La capa matematica no depende de SDL2 ni de OpenGL.
 - `ShapeFactory` crea figuras renderizables desde una seleccion local o desde una `ShapeDefinition` ya validada.
 - Los endpoints `/api/v1/shapes/*` son deterministicos; los endpoints `/api/v1/llm/*` usan Ollama solo para generar JSON estructurado.
+- `faceted_shape` acepta vertices, aristas y caras por JSON manual. En propuestas de Ollama se piden solo vertices y caras; la validacion local deriva aristas para exponer vertices, aristas y caras como elementos separados.
 - Ollama no ejecuta codigo ni toca el renderer: su salida se valida antes de crear figuras.
 - Cada request devuelve `trace_id` y escribe un log JSON por linea con endpoint, modelo, figura, dimensiones, `validation_ok`, `render_started`, `error_type`, latencia y estado.
 - El renderer dibuja `Mesh`; no conoce clases concretas como cubo, cilindro, piramide o esfera.

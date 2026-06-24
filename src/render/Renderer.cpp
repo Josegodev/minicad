@@ -10,6 +10,12 @@
 
 namespace langcad::render {
 
+struct Renderer::GpuShape {
+    std::unique_ptr<GpuMesh> mesh;
+    std::unique_ptr<GpuLines> edges;
+    std::unique_ptr<GpuPoints> points;
+};
+
 namespace {
 
 const char* mesh_vertex_shader = R"(
@@ -57,11 +63,12 @@ void main() {
 const char* line_vertex_shader = R"(
 #version 120
 attribute vec3 a_position;
+uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 
 void main() {
-    gl_Position = u_projection * u_view * vec4(a_position, 1.0);
+    gl_Position = u_projection * u_view * u_model * vec4(a_position, 1.0);
 }
  )";
 
@@ -123,7 +130,7 @@ Renderer::Renderer(int width, int height, const std::string& title)
 }
 
 Renderer::~Renderer() {
-    mesh_cache_.clear();
+    shape_cache_.clear();
     axes_.reset();
     line_shader_.reset();
     mesh_shader_.reset();
@@ -228,8 +235,34 @@ void Renderer::render(const Camera& camera, const scene::Scene& scene, bool pres
             continue;
         }
 
-        mesh_shader_->setMat4("u_model", object.transform);
-        gpuMeshFor(*object.shape).draw(*mesh_shader_);
+        GpuShape& gpu_shape = gpuShapeFor(*object.shape);
+        if (gpu_shape.mesh) {
+            mesh_shader_->setMat4("u_model", object.transform);
+            gpu_shape.mesh->draw(*mesh_shader_);
+        }
+    }
+
+    line_shader_->use();
+    line_shader_->setMat4("u_view", view);
+    line_shader_->setMat4("u_projection", projection);
+
+    for (const auto& object : scene.objects()) {
+        if (!object.visible || !object.shape) {
+            continue;
+        }
+
+        GpuShape& gpu_shape = gpuShapeFor(*object.shape);
+        line_shader_->setMat4("u_model", object.transform);
+
+        if (gpu_shape.edges) {
+            line_shader_->setVec3("u_color", core::Vec3(0.05, 0.05, 0.05));
+            gpu_shape.edges->draw(*line_shader_);
+        }
+
+        if (gpu_shape.points) {
+            line_shader_->setVec3("u_color", core::Vec3(1.0, 0.88, 0.2));
+            gpu_shape.points->draw(*line_shader_);
+        }
     }
 
     glapi::UseProgram(0);
@@ -285,21 +318,50 @@ void Renderer::drawAxes(const Camera& camera) const {
         : 1.0;
 
     line_shader_->use();
+    line_shader_->setMat4("u_model", core::Mat4::identity());
     line_shader_->setMat4("u_view", camera.viewMatrix());
     line_shader_->setMat4("u_projection", camera.projectionMatrix(aspect));
     line_shader_->setVec3("u_color", core::Vec3(0.15, 0.15, 0.15));
     axes_->draw(*line_shader_);
 }
 
-GpuMesh& Renderer::gpuMeshFor(const geometry::Shape3D& shape) {
-    auto found = mesh_cache_.find(&shape);
-    if (found != mesh_cache_.end()) {
+Renderer::GpuShape& Renderer::gpuShapeFor(const geometry::Shape3D& shape) {
+    auto found = shape_cache_.find(&shape);
+    if (found != shape_cache_.end()) {
         return *found->second;
     }
 
-    auto gpu_mesh = std::make_unique<GpuMesh>(shape.toMesh());
-    GpuMesh& reference = *gpu_mesh;
-    mesh_cache_.emplace(&shape, std::move(gpu_mesh));
+    core::Mesh mesh = shape.toMesh();
+    auto gpu_shape = std::make_unique<GpuShape>();
+
+    if (!mesh.triangles.empty()) {
+        gpu_shape->mesh = std::make_unique<GpuMesh>(mesh);
+    }
+
+    if (!mesh.edges.empty()) {
+        std::vector<unsigned int> indices;
+        indices.reserve(mesh.edges.size() * 2);
+
+        for (const auto& edge : mesh.edges) {
+            if (edge.a >= 0 && edge.b >= 0
+                && static_cast<std::size_t>(edge.a) < mesh.vertices.size()
+                && static_cast<std::size_t>(edge.b) < mesh.vertices.size()) {
+                indices.push_back(static_cast<unsigned int>(edge.a));
+                indices.push_back(static_cast<unsigned int>(edge.b));
+            }
+        }
+
+        if (!indices.empty()) {
+            gpu_shape->edges = std::make_unique<GpuLines>(mesh.vertices, indices);
+        }
+    }
+
+    if (!mesh.vertices.empty() && mesh.edges.empty() && mesh.triangles.empty()) {
+        gpu_shape->points = std::make_unique<GpuPoints>(mesh.vertices);
+    }
+
+    GpuShape& reference = *gpu_shape;
+    shape_cache_.emplace(&shape, std::move(gpu_shape));
     return reference;
 }
 

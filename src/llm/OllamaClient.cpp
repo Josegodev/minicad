@@ -69,8 +69,7 @@ int largestIntegerIn(const std::string& value) {
 
 geometry::ShapeDefinition rejectedDefinition() {
     geometry::ShapeDefinition definition;
-    definition.shape_type = "cube";
-    definition.dimensions["size"] = -1.0;
+    definition.shape_type = "faceted_shape";
     definition.units = "unitless";
     definition.centered = true;
     return definition;
@@ -132,19 +131,33 @@ std::string buildPrompt(const std::string& user_prompt) {
     return
         "Convert the user's request into one JSON ShapeDefinition only. "
         "Do not include code, file paths, commands, markdown, or explanations. "
-        "The JSON must contain shape_type, dimensions, units, render, and centered. "
-        "Supported shape_type values: cube, cylinder, pyramid, sphere. "
+        "The JSON must contain shape_type, dimensions, vertices, faces, units, render, and centered. "
+        "The only supported shape_type value for LLM output is faceted_shape. "
+        "Use faceted_shape for every drawable solid, including cubes, pyramids, prisms, boxes, and other solids. "
         "If the user asks for code, commands, shell execution, files, paths, schema changes, or multiple shapes, "
         "return a ShapeDefinition that validation will reject: "
-        "{\"shape_type\":\"cube\",\"dimensions\":{\"size\":-1},\"units\":\"unitless\",\"render\":{},\"centered\":true}. "
-        "Use positive numeric dimensions. Use centered=true. Preserve every explicit numeric value from the user. "
+        "{\"shape_type\":\"faceted_shape\",\"dimensions\":{},\"vertices\":[],\"faces\":[],\"units\":\"unitless\",\"render\":{},\"centered\":true}. "
+        "Use centered=true. Preserve every explicit numeric value from the user. "
         "Spanish terms: cubo=cube, cilindro=cylinder, piramide=pyramid, esfera=sphere, radio=radius, "
-        "altura=height, tamano/size=size, base=base_size, segmentos=render.segments, anillos=render.rings. "
-        "Use render.segments only for cylinder or sphere. Use render.rings only for sphere. "
-        "If the user specifies rings/anillos for a sphere, copy that number into render.rings. "
-        "Example: 'esfera de radio 2 con 32 segmentos y 16 anillos' becomes "
-        "{\"shape_type\":\"sphere\",\"dimensions\":{\"radius\":2},\"units\":\"unitless\","
-        "\"render\":{\"segments\":32,\"rings\":16},\"centered\":true}.\n\n"
+        "altura=height, tamano/size=size, base=base_size, segmentos=render.segments, anillos=render.rings, "
+        "punto/vertice=vertex, vertices=vertices, arista=edge, aristas=edges, cara=face, caras=faces. "
+        "For faceted_shape, dimensions must be {}, render must be {}, and include vertices and faces arrays. "
+        "Each vertex must be an object with numeric x, y, and z. "
+        "Each face must be an array of at least three integer vertex indices into vertices. "
+        "Faces define the boundary loops of the solid. Do not include edges; the runtime derives edges from faces. "
+        "Indices are zero-based and must reference existing vertices only. Do not invent extra fields. "
+        "For a cube or box, provide exactly the eight corner vertices and six quad faces. Do not use a triangle fan for a cube. "
+        "For a pyramid, provide the base vertices, apex vertex, one base face, and triangular side faces. "
+        "For curved solids like cylinders or spheres, use the smallest faceted approximation that satisfies explicit user values. "
+        "Example: 'cubo de tamano 2' becomes "
+        "{\"shape_type\":\"faceted_shape\",\"dimensions\":{},"
+        "\"vertices\":[{\"x\":-1,\"y\":-1,\"z\":-1},{\"x\":1,\"y\":-1,\"z\":-1},{\"x\":1,\"y\":1,\"z\":-1},{\"x\":-1,\"y\":1,\"z\":-1},{\"x\":-1,\"y\":-1,\"z\":1},{\"x\":1,\"y\":-1,\"z\":1},{\"x\":1,\"y\":1,\"z\":1},{\"x\":-1,\"y\":1,\"z\":1}],"
+        "\"faces\":[[0,1,2,3],[4,7,6,5],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]],"
+        "\"units\":\"unitless\",\"render\":{},\"centered\":true}. "
+        "Example: 'cara triangular con vertices (0,0,0), (1,0,0), (0,1,0)' becomes "
+        "{\"shape_type\":\"faceted_shape\",\"dimensions\":{},"
+        "\"vertices\":[{\"x\":0,\"y\":0,\"z\":0},{\"x\":1,\"y\":0,\"z\":0},{\"x\":0,\"y\":1,\"z\":0}],"
+        "\"faces\":[[0,1,2]],\"units\":\"unitless\",\"render\":{},\"centered\":true}.\n\n"
         "User request: " + user_prompt;
 }
 

@@ -172,4 +172,51 @@ void GpuLines::draw(const ShaderProgram& shader) const {
     glapi::DisableVertexAttribArray(static_cast<GLuint>(position_location));
 }
 
+GpuPoints::GpuPoints(const std::vector<core::Vec3>& vertices)
+    : vertex_buffer_(0),
+      vertex_count_(static_cast<GLsizei>(vertices.size()))
+{
+    auto flattened = flattenVertices(vertices);
+
+    glapi::GenBuffers(1, &vertex_buffer_);
+    glapi::BindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
+    glapi::BufferData(GL_ARRAY_BUFFER, static_cast<glapi::GLsizeiptr>(flattened.size() * sizeof(float)), flattened.data(), GL_STATIC_DRAW);
+}
+
+GpuPoints::~GpuPoints() {
+    deleteBuffer(vertex_buffer_);
+}
+
+GpuPoints::GpuPoints(GpuPoints&& other) noexcept
+    : vertex_buffer_(std::exchange(other.vertex_buffer_, 0)),
+      vertex_count_(std::exchange(other.vertex_count_, 0))
+{
+}
+
+GpuPoints& GpuPoints::operator=(GpuPoints&& other) noexcept {
+    if (this != &other) {
+        deleteBuffer(vertex_buffer_);
+        vertex_buffer_ = std::exchange(other.vertex_buffer_, 0);
+        vertex_count_ = std::exchange(other.vertex_count_, 0);
+    }
+
+    return *this;
+}
+
+void GpuPoints::draw(const ShaderProgram& shader) const {
+    GLint position_location = shader.attributeLocation("a_position");
+    if (position_location < 0) {
+        return;
+    }
+
+    glapi::BindBuffer(GL_ARRAY_BUFFER, vertex_buffer_);
+    glapi::EnableVertexAttribArray(static_cast<GLuint>(position_location));
+    glapi::VertexAttribPointer(static_cast<GLuint>(position_location), 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+    glPointSize(7.0f);
+    glDrawArrays(GL_POINTS, 0, vertex_count_);
+
+    glapi::DisableVertexAttribArray(static_cast<GLuint>(position_location));
+}
+
 } // namespace langcad::render
